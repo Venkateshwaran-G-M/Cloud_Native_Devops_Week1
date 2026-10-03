@@ -1,15 +1,48 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import {
+    app,
+    HttpRequest,
+    HttpResponseInit,
+    InvocationContext
+} from "@azure/functions";
 
-export async function HelloHttp(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`Http function processed request for url "${request.url}"`);
+interface NameRequest {
+    firstName?: string;
+    lastName?: string;
+}
 
-    const name = request.query.get('name') || await request.text() || 'world';
+export async function HelloHttp(
+    request: HttpRequest,
+    context: InvocationContext
+): Promise<HttpResponseInit> {
 
-    return { body: `Hello from Week 1 Lab!` };
-};
+    try {
+        const body = await request.json() as NameRequest;
 
-app.http('HelloHttp', {
-    methods: ['GET', 'POST'],
-    authLevel: 'anonymous',
+        const firstName = body.firstName?.trim();
+        const lastName = body.lastName?.trim();
+
+        if (!firstName || !lastName) {
+            return {
+                status: 400,
+                body: "Please provide both firstName and lastName."
+            };
+        }
+
+        return {
+            status: 200,
+            body: `Hello, ${firstName} ${lastName}!`
+        };
+
+    } catch (error) {
+        return {
+            status: 400,
+            body: "Invalid JSON. Please provide firstName and lastName as JSON."
+        };
+    }
+}
+
+app.http("HelloHttp", {
+    methods: ["POST"],
+    authLevel: "anonymous",
     handler: HelloHttp
 });
